@@ -1,9 +1,11 @@
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "../$types";
+import { Helper } from "../../../../../../lib/utils/helper";
 
 export const load: PageServerLoad = async ({params, url}) => {
     const statusCode = url.searchParams.get('code');
-    const phone = url.searchParams.get('phone');
+    let phone = url.searchParams.get('phone');
+    phone = Helper.getAndValidatePhoneWithCountryCode(phone)
     const patientId = params.patientId;
     
     if (!statusCode) {

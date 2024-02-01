@@ -1,8 +1,7 @@
-import { error, redirect, type RequestEvent } from "@sveltejs/kit";
-import { confirmAndDelete, loginWithOtp } from "../../services/user";
+import { type RequestEvent } from "@sveltejs/kit";
+import { loginWithOtp } from "../../services/user";
 import { SessionManager } from "../../../api/session.manager";
 import { CookieUtils } from "$lib/utils/cookie.utils";
-import { goto } from "$app/navigation";
 
 //////////////////////////////////////////////////////////////
 
@@ -11,13 +10,11 @@ export const POST = async (event: RequestEvent) => {
 	const request = event.request;
 	const data = await request.json();
     const otp = data.otp;
-    const mobileNumber = data.mobileNumber;
+    const phone = data.phone;
     const patientId = data.patientId;
     let response;
     try {
-        // response = await confirmAndDelete(otp, mobileNumber, patientId)
-        response = await loginWithOtp(otp, mobileNumber);
-        // data1 = await loginResponse.json();
+        response = await loginWithOtp(otp, phone);
         console.log('Login Response ', response)
         if (response.Status === 'failure' || response.HttpCode !== 200) {
             throw new Error(response.Message)
@@ -36,7 +33,6 @@ export const POST = async (event: RequestEvent) => {
         if (!session) {
             console.log(`Session cannot be constructed!`);
             throw new Error(`Session cannot be constructed`);
-            // throw redirect(303, `/sign-in`, errorMessage(`Use login session cannot be created!`), event);
         }
         console.log('Session - ' + JSON.stringify(session, null, 2));
         const userSession = await SessionManager.addSession(session.sessionId, session);
@@ -56,7 +52,7 @@ export const POST = async (event: RequestEvent) => {
 		return new Response(JSON.stringify({
             Status: 'failure',
             Message: err.message,
-            HttpCode: response.HttpCode
+            HttpCode: response.HttpCode ? response.HttpCode : 500
             }),
         );
 	}

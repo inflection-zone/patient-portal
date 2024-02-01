@@ -3,11 +3,13 @@
 	import { Modal } from '@skeletonlabs/skeleton';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
 	import type { PageServerData } from './$types';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
+    import {PatientPortalHelper} from '$lib/utils/patient.portal.helper';
+    import toast, { Toaster } from 'svelte-french-toast';
 	
     export let data: PageServerData;
-    let mobileNumber = data.mobile;
+    let phone = data.phone;
     let patientId = data.patientId;
     let isConfirm = false;
     const modalStore = getModalStore();
@@ -38,14 +40,14 @@
 		 modalStore.trigger(modal);
 	};
 
-	const handleConfirm = async (mobileNumber: string, otp: string) => {
+	const handleConfirm = async (phone: string, otp: string) => {
         console.log('handling on confirm .....')
 
         // Do login with phone & otp and set cookies 
         const response = await fetch(`/api/server/login`, {
 			method: 'POST',
 			body: JSON.stringify({
-                mobileNumber,
+                phone,
                 otp,
                 patientId
             }),
@@ -58,16 +60,8 @@
 
         console.log('Data',data);
         if (data.Status === 'failure' || data.HttpCode !== 200) {
-            if (data.HttpCode === 404 && data.Message === 'Active OTP record not found!') {
-                goto(`/patient/${patientId}/delete/confirm/status?phone=${mobileNumber}&code=invalidotp`)
-            } else if (data.HttpCode === 400 && data.Message === 'Login OTP has expired. Please regenerate OTP again!') {
-                goto(`/patient/${patientId}/delete/confirm/status?phone=${mobileNumber}&code=regenerate`)
-            } else {
-                goto(`/patient/${patientId}/delete/confirm/status?code=${data.Message}`)
-            }
-        // } else {
-        //     goto(`/patient/${patientId}/delete/confirm/status?code=success`)
-        // }
+            const status = PatientPortalHelper.getLoginStatus(data);
+            goto(`/patient/${patientId}/delete/confirm/status?phone=${phone}&code=${status}`)
         } else {
         //Perform Delete patient
         const deleteResponse = await fetch(`/api/server/delete`, {
@@ -82,14 +76,9 @@
         const deletedData = await deleteResponse.json();
 
         console.log('Deleted Data',deletedData);
-        if (deletedData.Status === 'failure' || deletedData.HttpCode !== 200) {
-            goto(`/patient/${patientId}/delete/confirm/status?code=${data.Message}`)
-         } else {
-            goto(`/patient/${patientId}/delete/confirm/status?code=success`)
+        const status = PatientPortalHelper.getPatientDeleteStatus(deletedData);
+        goto(`/patient/${patientId}/delete/confirm/status?code=${status}`);
         }
-        }
-
-        
  	};
 
 	const handleCancel = () => {
@@ -108,7 +97,7 @@
                 isConfirm = true;
                 console.log('Confirm clicked')
 				const otpValue = otp.join('');
-                handleConfirm(mobileNumber, otpValue);
+                handleConfirm(phone, otpValue);
  			} else {
                 isConfirm = true;
                 console.log('Cancelled clicked')
@@ -139,13 +128,13 @@
 					<label for="mobile" class="block mb-2 text-black">Mobile no :</label>
 					<input
 						type="tel"
-						bind:value={mobileNumber}
+						bind:value={phone}
 						name='phone'
 						pattern="[0-9]*"
 						inputmode="numeric"
 						placeholder=""
 						class=" w-[280px] px-4 py-2 border rounded-xl text-gray-700"
-						readonly={mobileNumber !== ''}
+						readonly={phone !== ''}
 						required
 					/>
 				</div>

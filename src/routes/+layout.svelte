@@ -1,4 +1,5 @@
 <script lang="ts">
+    import toast, {Toaster} from 'svelte-french-toast'
 	import '../app.postcss';
 	import { initializeStores } from '@skeletonlabs/skeleton';
 	initializeStores();
@@ -22,5 +23,5 @@
 	import { storePopup } from '@skeletonlabs/skeleton';
 	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
 </script>
-
+<Toaster />
 <slot />

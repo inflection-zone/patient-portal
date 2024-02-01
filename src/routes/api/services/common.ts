@@ -39,9 +39,5 @@ export const post_ = async (sessionId: string, url: string, bodyObj: unknown) =>
         headers
     });
     const response = await res.json();
-    // if (response.Status === 'failure' ||
-    // (response.HttpCode !== 201 && response.HttpCode !== 200)) {
-    //     throw error(response.HttpCode, response.Message);
-    // }
     return response;
 }

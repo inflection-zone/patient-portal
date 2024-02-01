@@ -2,7 +2,6 @@ import type { RequestEvent } from "@sveltejs/kit";
 import { deletePatient } from "../../services/user";
 import { SessionManager } from "../../session.manager";
 import { CookieUtils } from "$lib/utils/cookie.utils";
-import { json } from "stream/consumers";
 
 export const DELETE = async (event: RequestEvent) => {
     console.log('Inside the delete endpoint.')
@@ -39,7 +38,7 @@ export const DELETE = async (event: RequestEvent) => {
 		return new Response(JSON.stringify({
             Status: 'failure',
             Message: err.message,
-            HttpCode: response.HttpCode
+            HttpCode: response.HttpCode ? response.HttpCode : 500
             }),
         );
 	}

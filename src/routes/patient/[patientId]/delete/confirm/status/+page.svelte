@@ -2,6 +2,15 @@
 	import { goto } from '$app/navigation';
     import type { PageServerData } from './$types'
     import Status from '$lib/components/status.svelte';
+    import toast, { Toaster } from 'svelte-french-toast';
+    import {
+        invalidOtpMessage,
+        regenerateMessage,
+        serverErrorMessage,
+        successMessage,
+        thanksMessage
+    } from '$lib/types/message.types';
+
     export let data: PageServerData;
     $: statusCode = data.statusCode;
     const phone = data.phone;
@@ -25,31 +34,31 @@
 
         const data = await response.json();
         console.log('OTP DATA', data);
+
         if (data.Status === 'failure' || data.HttpCode !== 200) {
-            goto(`/patient/${patientId}/delete/confirm/status?code=${data.Message}`)
+            goto(`/patient/${patientId}/delete/confirm/status?code=${serverErrorMessage}`)
         } else {
-            goto(`/patient/${patientId}/delete/confirm/?mobile=${phone}`);
+            toast.success('OTP has been successfully generated!');
+            goto(`/patient/${patientId}/delete/confirm/?phone=${phone}`);
         }
     }
 
     const handleReenterOtpClick = () => {
         console.log('handling re enter otp click...');
-        goto(`/patient/${patientId}/delete/confirm/?mobile=${phone}`);
+        goto(`/patient/${patientId}/delete/confirm/?phone=${phone}`);
     }
 </script>
+
 <div  >
     {#if statusCode === 'cancel'}
-    <Status title={"Cancel"} message={'Thank you for continuing our service!'} generateOtp={false}  invalidOtp={false}></Status>
-        <!-- <h1>Thank you for continuing our service!</h1> -->
+        <Status title={statusCode} message={thanksMessage}></Status>
     {:else if statusCode === 'success'}
-    <Status title={"Success"} message={'Successfully deleted all your records!'} generateOtp={false}  invalidOtp={false} ></Status>
-        <!-- <h1>Successfully deleted all your records! </h1> -->
+        <Status title={statusCode} message={successMessage}></Status>
         {:else if statusCode === 'invalidotp'}
-        <Status on:reenterOtp={handleReenterOtpClick} title={"Invalid OTP"} message={'OTP is invalid! Please re enter the OTP'} generateOtp={false} invalidOtp={true} ></Status>
-        {:else if statusCode === 'regenerate'}
-        <Status on:generateOtp={handleGenerateOtpClick} title={"OTP Expired"} message={'OTP is expired! Please re generate the OTP'} invalidOtp={false} generateOtp={true}></Status>
-        {:else}
-        <Status title={"Alert"} message={statusCode} generateOtp={false}  invalidOtp={false}></Status>
-            <!-- <h1>{statusCode}</h1> -->
+            <Status title={statusCode} on:reenterOtp={handleReenterOtpClick}  message={invalidOtpMessage} invalidOtp={true} ></Status>
+                {:else if statusCode === 'regenerate'}
+                    <Status title={statusCode} on:generateOtp={handleGenerateOtpClick}  message={regenerateMessage} generateOtp={true}></Status>
+                {:else}
+                    <Status title={statusCode} message={statusCode}></Status>
     {/if}
 </div>

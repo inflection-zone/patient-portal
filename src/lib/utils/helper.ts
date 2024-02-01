@@ -180,4 +180,48 @@ export class Helper {
         return blob;
     };
 
+    static getAndValidatePhoneWithCountryCode = (phone: string) => {
+        if (!phone) {
+            return null;
+        }
+
+        if (!phone.includes('-')) {
+            return null;
+        }
+
+        phone = phone.trim();
+        const countryCode = phone.split('-')[0].trim();
+        const phoneNumber = phone.split('-')[1].trim();;
+
+        if (countryCode.length > 0 && phoneNumber.length === 10) {
+            let isPhoneValid: boolean = true;
+            for (let i = 0; i < phoneNumber.length; i++) {
+                const c = phoneNumber[i];
+                if (Helper.isDigit(c)) {
+                    continue;
+                }
+                else {
+                    isPhoneValid = false;
+                    break;
+                }
+            }
+
+            let isCountryCodeValid: boolean = true;
+            for (let i = 0; i < countryCode.length; i++) {
+                const c = countryCode[i];
+                if (Helper.isDigit(c)) {
+                    continue;
+                }
+                else {
+                    isCountryCodeValid = false;
+                    break;
+                }
+            }
+
+            if (isCountryCodeValid && isPhoneValid) {
+                return `${countryCode}-${phoneNumber}`;
+            }
+        }
+        return null;
+    }
 }

@@ -22,4 +22,8 @@ declare namespace App {
         stack  ?: string;
     }
 	// interface Platform {}
+
+    interface PageData {
+        flash?: { type: 'success' | 'error'; message: string; };
+      }
 }

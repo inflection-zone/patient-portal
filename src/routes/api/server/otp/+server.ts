@@ -1,5 +1,5 @@
-import { error, redirect, type RequestEvent } from "@sveltejs/kit";
-import { confirmAndDelete, generateOtp, loginWithOtp } from "../../services/user";
+import { type RequestEvent } from "@sveltejs/kit";
+import { generateOtp } from "../../services/user";
 
 //////////////////////////////////////////////////////////////
 
@@ -11,12 +11,10 @@ export const POST = async (event: RequestEvent) => {
     const phone = data.phone;
     const purpose = data.purpose;
     const loginRoleId = data.loginRoleId ?? 2;
-    // const mobileNumber = data.mobileNumber;
     let response;
 
     try {
         response = await generateOtp(sessionId!, phone, purpose, loginRoleId)
-        // const data = await response.json();
         console.log('Response OTP at +server.ts', response);
 
         return new Response(JSON.stringify({
