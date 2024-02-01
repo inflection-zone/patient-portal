@@ -1,32 +1,28 @@
 <script lang="ts">
-	// Import necessary modules and libraries
-	import { getModalStore } from '@skeletonlabs/skeleton';
-	const modalStore = getModalStore();
-
+    import { getModalStore } from '@skeletonlabs/skeleton';
 	import { Modal } from '@skeletonlabs/skeleton';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
-	import { onMount } from 'svelte';
+	import type { PageServerData } from './$types';
+	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
+	
+    export let data: PageServerData;
+    let mobileNumber = data.mobile;
+    let patientId = data.patientId;
+    let isConfirm = false;
+    const modalStore = getModalStore();
 
-	// Initialize variables for mobile number and OTP
-	let mobileNumber = '';
-	const validateMobileInput = () => {
-    // Remove non-numeric characters from the input
-    mobileNumber = mobileNumber.replace(/\D/g, '');
-
-    // Limit the length to between 10 and 10 digits
-    if (mobileNumber.length > 10) {
-        mobileNumber = mobileNumber.slice(0, 10);
-    } else if (mobileNumber.length < 10) {
-        // Handle the case where the mobile number is less than 10 digits (optional)
-        // You may choose to display an error message or take other actions here
-    }
-};
+    let enteredOtp;
 
 	let otp = ['', '', '', '', '', ''];
 
 	// Array to hold references to OTP input elements
 	let otpInputs: Array<HTMLInputElement> = [];
 
+    $:console.log(otp)
+    $: enteredOtp = otp.join('');
+
+    $: console.log('Enter OTP input', enteredOtp);
 	// Function to handle OTP input and auto-focus
 	const handleOtpInput = (index: number) => {
 		// Remove non-numeric characters from the input
@@ -38,24 +34,67 @@
 		}
 	};
 
-	// Function to handle form submission
-	const handleSubmit = () => {
-		// Trigger the modal before redirecting
-		modalStore.trigger(modal);
+	const handleSubmit = async () => {
+		 modalStore.trigger(modal);
 	};
 
-	// Function to handle confirmation after modal response
-	const handleConfirm = () => {
-		const otpValue = otp.join('');
-		const routePath = `/patient/delete/confirm?mobile=${encodeURIComponent(mobileNumber)}`;
-		console.log('Thank you! Deletion confirmed.');
-		window.location.href = routePath;
-	};
+	const handleConfirm = async (mobileNumber: string, otp: string) => {
+        console.log('handling on confirm .....')
 
-	// Function to handle cancellation after modal response
+        // Do login with phone & otp and set cookies 
+        const response = await fetch(`/api/server/login`, {
+			method: 'POST',
+			body: JSON.stringify({
+                mobileNumber,
+                otp,
+                patientId
+            }),
+			headers: {
+				'content-type': 'application/json'
+			}
+		});
+
+        const data = await response.json();
+
+        console.log('Data',data);
+        if (data.Status === 'failure' || data.HttpCode !== 200) {
+            if (data.HttpCode === 404 && data.Message === 'Active OTP record not found!') {
+                goto(`/patient/${patientId}/delete/confirm/status?phone=${mobileNumber}&code=invalidotp`)
+            } else if (data.HttpCode === 400 && data.Message === 'Login OTP has expired. Please regenerate OTP again!') {
+                goto(`/patient/${patientId}/delete/confirm/status?phone=${mobileNumber}&code=regenerate`)
+            } else {
+                goto(`/patient/${patientId}/delete/confirm/status?code=${data.Message}`)
+            }
+        // } else {
+        //     goto(`/patient/${patientId}/delete/confirm/status?code=success`)
+        // }
+        } else {
+        //Perform Delete patient
+        const deleteResponse = await fetch(`/api/server/delete`, {
+			method: 'DELETE',
+			body: JSON.stringify({
+                patientId
+            }),
+			headers: {
+				'content-type': 'application/json'
+			}
+		});
+        const deletedData = await deleteResponse.json();
+
+        console.log('Deleted Data',deletedData);
+        if (deletedData.Status === 'failure' || deletedData.HttpCode !== 200) {
+            goto(`/patient/${patientId}/delete/confirm/status?code=${data.Message}`)
+         } else {
+            goto(`/patient/${patientId}/delete/confirm/status?code=success`)
+        }
+        }
+
+        
+ 	};
+
 	const handleCancel = () => {
-		console.log('Deletion cancelled.');
-		// Handle cancellation logic here (e.g., close the modal)
+		console.log('Delete cancelled.');
+        goto(`/patient/patientId/delete/confirm/status?code=cancel`);
 	};
 
 	// Modal settings
@@ -64,35 +103,23 @@
 		title: 'Delete',
 		body: 'Please note that once the account is deleted, all the associated data for your account will also be removed.',
 
-		response: (r: boolean) => {
-			console.log('response:', r);
-			// Redirect only if the user confirms
-			if (r) {
+		response: (clicked: boolean) => {
+			if (clicked) {
+                isConfirm = true;
+                console.log('Confirm clicked')
 				const otpValue = otp.join('');
-				const routePath = `/patient/delete/confirm?mobile=${encodeURIComponent(mobileNumber)}`;
-				window.location.href = routePath;
-			}
+                handleConfirm(mobileNumber, otpValue);
+ 			} else {
+                isConfirm = true;
+                console.log('Cancelled clicked')
+                handleCancel();
+           }
 		}
 	};
-
-	// Function to get query parameters from the URL
-	function getQueryParameter(key: string): string | null {
-		const urlSearchParams = new URLSearchParams(window.location.search);
-		return urlSearchParams.get(key);
-	}
-
-	 onMount(() => {
-    // Get mobile number from query parameters if available
-    const mobileQueryParam = getQueryParameter('mobile');
-    if (mobileQueryParam) {
-      // Limit the mobile number to 10 digits
-      mobileNumber = mobileQueryParam.slice(0, 10);
-    }
-  });
 </script>
 
 <!-- Svelte component structure -->
-<Modal background="bg-white text-black " on:confirm={handleConfirm} on:cancel={handleCancel} />
+<Modal background="bg-white text-black "/>
 
 <!-- Fixed header with a specific color -->
 <div class="fixed top-0 h-20 w-full bg-[#7165e3]"></div>
@@ -100,7 +127,11 @@
 <!-- Main content area with a white background -->
 <div class=" bg-white">
 	<!-- Form for mobile number and OTP input -->
-	<form on:submit|preventDefault={handleSubmit} class=" relative z-30">
+	<form 
+    method="post"
+    use:enhance
+    on:submit|preventDefault={handleSubmit}
+    class=" relative z-30">
 		<div class="flex items-center justify-center h-screen">
 			<div class="border-2 rounded-3xl py-16 px-8 bg-gray-100">
 				<!-- Input field for mobile number -->
@@ -109,7 +140,7 @@
 					<input
 						type="tel"
 						bind:value={mobileNumber}
-						on:input={validateMobileInput}
+						name='phone'
 						pattern="[0-9]*"
 						inputmode="numeric"
 						placeholder=""
@@ -136,7 +167,8 @@
 						/>
 					{/each}
 				</div>
-
+                <input type="text" hidden name="otp" bind:value={enteredOtp}>
+                <input type="text" hidden name="isConfirm" bind:value={isConfirm}>
 				<!-- Submit button -->
 				<div class="flex justify-center">
 					<button type="submit" class="mt-8 px-28 py-2 bg-[#7165e3] text-white rounded-md"
