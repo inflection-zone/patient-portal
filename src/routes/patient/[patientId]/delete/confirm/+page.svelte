@@ -14,6 +14,10 @@
     let isConfirm = false;
     const modalStore = getModalStore();
 
+    if (data.isOtpGenerated) {
+        toast.success('OTP has been successfully generated!');
+    }
+
     let enteredOtp;
 
 	let otp = ['', '', '', '', '', ''];
@@ -129,6 +133,7 @@
 					<input
 						type="tel"
 						bind:value={phone}
+                        disabled
 						name='phone'
 						pattern="[0-9]*"
 						inputmode="numeric"
