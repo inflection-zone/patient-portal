@@ -8,7 +8,9 @@ import { successMessage } from "$lib/utils/message.utils";
 export const load:PageServerLoad = async (event: RequestEvent) => {
     const sessionId = event.cookies.get('sessionId');
     let phone = event.url.searchParams.get('phone')
-
+    let redirect = event.url.searchParams.get('redirect');
+    let isOtpGenerated = false;
+    console.log('Redirect ', redirect);
     console.log(phone);
     const patientId = event.params.patientId;
 
@@ -19,13 +21,15 @@ export const load:PageServerLoad = async (event: RequestEvent) => {
         throw error(500,'Invalid url')
     }
 
-    const response = await generateOtp(sessionId, phone, 'Login', 2);
+    if (!redirect) {
+        const response = await generateOtp(sessionId, phone, 'Login', 2);
 
-    if (response.status === 'failure' || response.HttpCode !== 200) {
-        throw error(500,`Unable to generate OTP : ${response.Message}`);
+        if (response.status === 'failure' || response.HttpCode !== 200) {
+            throw error(500,`Unable to generate OTP : ${response.Message}`);
+        }
+    isOtpGenerated = true;
     }
-
-    const isOtpGenerated = true;
+ 
     return {
         phone,
         patientId,

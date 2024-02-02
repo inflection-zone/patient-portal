@@ -39,13 +39,13 @@
             goto(`/patient/${patientId}/delete/confirm/status?code=${serverErrorMessage}`)
         } else {
             toast.success('OTP has been successfully generated!');
-            goto(`/patient/${patientId}/delete/confirm/?phone=${phone}`);
+            goto(`/patient/${patientId}/delete/confirm/?phone=${phone}&redirect=true`);
         }
     }
 
     const handleReenterOtpClick = () => {
         console.log('handling re enter otp click...');
-        goto(`/patient/${patientId}/delete/confirm/?phone=${phone}`);
+        goto(`/patient/${patientId}/delete/confirm/?phone=${phone}&redirect=true`);
     }
 </script>
 
