@@ -1,0 +1,64 @@
+<script lang="ts">
+	import { goto } from '$app/navigation';
+    import type { PageServerData } from './$types'
+    import Status from '$lib/components/status.svelte';
+    import toast, { Toaster } from 'svelte-french-toast';
+    import {
+        invalidOtpMessage,
+        regenerateMessage,
+        serverErrorMessage,
+        successMessage,
+        thanksMessage
+    } from '$lib/types/message.types';
+
+    export let data: PageServerData;
+    $: statusCode = data.statusCode;
+    const phone = data.phone;
+    const patientId = data.patientId;
+
+    $: console.log('STATUS CODE ',statusCode)
+
+    const handleGenerateOtpClick = async (e) => {
+
+        console.log('handling generate otp click...');
+        const response = await fetch('/api/server/otp', {
+            method: "POST",
+            body: JSON.stringify({
+                phone,
+                purpose: 'Login'
+            }),
+            headers: {
+				'content-type': 'application/json'
+			}
+        })
+
+        const data = await response.json();
+        console.log('OTP DATA', data);
+
+        if (data.Status === 'failure' || data.HttpCode !== 200) {
+            goto(`/patient/${patientId}/delete/confirm/status?code=${serverErrorMessage}`)
+        } else {
+            toast.success('OTP has been successfully generated!');
+            goto(`/patient/${patientId}/delete/confirm/?phone=${phone}&redirect=true`);
+        }
+    }
+
+    const handleReenterOtpClick = () => {
+        console.log('handling re enter otp click...');
+        goto(`/patient/${patientId}/delete/confirm/?phone=${phone}&redirect=true`);
+    }
+</script>
+
+<div  >
+    {#if statusCode === 'cancel'}
+        <Status title={statusCode} message={thanksMessage}></Status>
+    {:else if statusCode === 'success'}
+        <Status title={statusCode} message={successMessage}></Status>
+        {:else if statusCode === 'invalidotp'}
+            <Status title={statusCode} on:reenterOtp={handleReenterOtpClick}  message={invalidOtpMessage} invalidOtp={true} ></Status>
+                {:else if statusCode === 'regenerate'}
+                    <Status title={statusCode} on:generateOtp={handleGenerateOtpClick}  message={regenerateMessage} generateOtp={true}></Status>
+                {:else}
+                    <Status title={statusCode} message={statusCode}></Status>
+    {/if}
+</div>
