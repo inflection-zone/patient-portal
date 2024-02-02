@@ -121,8 +121,6 @@
 <div class=" bg-white">
 	<!-- Form for mobile number and OTP input -->
 	<form 
-    method="post"
-    use:enhance
     on:submit|preventDefault={handleSubmit}
     class=" relative z-30">
 		<div class="flex items-center justify-center h-screen">

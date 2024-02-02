@@ -27,6 +27,7 @@ export const load:PageServerLoad = async (event: RequestEvent) => {
         if (response.status === 'failure' || response.HttpCode !== 200) {
             throw error(500,`Unable to generate OTP : ${response.Message}`);
         }
+    console.log('OTP GENERATE %%%%')
     isOtpGenerated = true;
     }
  
@@ -36,14 +37,4 @@ export const load:PageServerLoad = async (event: RequestEvent) => {
         isOtpGenerated
     }
 }
-
-export const actions = {
-
-	default: async (event: RequestEvent) => {
-        // console.log('Inside defult action.');
-        // const request = event.request;
-        // const data = await request.formData(); // or .json(), or .text(), etc
-        // console.log(Object.fromEntries(data));
-    }
-};
 
