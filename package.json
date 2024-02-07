@@ -47,6 +47,7 @@
   "type": "module",
   "dependencies": {
     "@floating-ui/dom": "1.5.4",
+    "@sveltejs/adapter-node": "^4.0.1",
     "highlight.js": "11.9.0",
     "svelte-french-toast": "^1.2.0"
   }
